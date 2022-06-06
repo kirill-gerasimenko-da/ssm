@@ -1,0 +1,23 @@
+{:paths ["src"]
+ :deps  {org.babashka/cli        {:mvn/version "0.2.16"}
+         org.babashka/spec.alpha {:git/url "https://github.com/babashka/spec.alpha" :git/sha "8df0712896f596680da7a32ae44bb000b7e45e68"}}
+ :pods  {org.babashka/aws {:version "0.1.2"}}
+ :tasks
+ {:requires     ([ssm.core :as ssm]
+                 [ssm.utils :as utl]
+                 [babashka.cli :as cli])
+  :init         {(def cmd-line-opts (cli/parse-opts *command-line-args*))
+                 (ssm/instrument-all)}
+  sync-params   (let [env            (:env cmd-line-opts)
+                      config-file    (:config cmd-line-opts)
+                      backup-dir     (:backup-dir cmd-line-opts)
+                      decrypt-region (:decrypt-region cmd-line-opts)
+                      dump           (:dump cmd-line-opts)]
+                  (ssm/sync-parameters config-file backup-dir env :decrypt-region decrypt-region :dump dump))
+  encrypt-param (let [text   (:text cmd-line-opts)
+                      key    (:key cmd-line-opts)
+                      region (:region cmd-line-opts)]
+                  (ssm/encrypt-parameter text key :region region))
+  decrypt-param (let [text   (:text cmd-line-opts)
+                      region (:region cmd-line-opts)]
+                  (ssm/decrypt-parameter text :region region))}}
