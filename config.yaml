@@ -1,0 +1,16 @@
+region: us-east-1
+prefix: /app/test-service
+parameters:
+  Parameter1:
+    type: SecureString
+    values:
+      dev: dev1-val
+      qa: qa1-val
+      stage: stage1-val
+  Parameter2:
+    type: SecureString
+    values:
+      dev: some new values
+      qa: some old value
+      stage: stage1-val
+  
