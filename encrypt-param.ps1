@@ -1,12 +1,14 @@
+[CmdletBinding(PositionalBinding = $false)]
+
 param (
     [Parameter(Mandatory = $true)][String]
-    $text = $nul,
+    $text,
 
     [Parameter(Mandatory = $false)][String]
-    $key = $nul,
+    $key,
 
     [Parameter(Mandatory = $false)][String]
-    $region = $nul
+    $region
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
@@ -61,5 +63,3 @@ if ($key) { $params += "-key"; $params+= $key }
 if ($region) { $params += "-region"; $params += $region }
 
 bb --config "${scriptDir}/bb.edn" run encrypt-param @params
-
-

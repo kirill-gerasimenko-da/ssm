@@ -1,15 +1,17 @@
+[CmdletBinding(PositionalBinding = $false)]
+
 param (
     [Parameter(Mandatory = $true)][String]
-    $env = $nul,
+    $env,
 
     [Parameter(Mandatory = $true)][String]
-    $configPath = $nul,
+    $configPath,
 
     [Parameter(Mandatory = $false)][String]
     $backupDir = "./backups",
 
     [Parameter(Mandatory = $false)][String]
-    $decryptRegion = $nul
+    $decryptRegion
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
