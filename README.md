@@ -21,6 +21,26 @@ environment will be stored under `backups` folder.
 ./sync-params.ps1 -env dev01 -configPath ./dev01.config.yaml
 ```
 
+### Dumping put-parameter AWS CLI commands
+
+There is a convenience CLI key `-dump`, which will print to stdout the
+parameters (with decrypted values for `SecureString` parameters) for
+specific environment in form of `aws ssm put-parameter <...>` command
+statements. This could be useful in the environments where it's not
+possible to run the tool, or in manual deployment scenarios.
+
+For example:
+``` powershell
+./sync-params.ps1 -env dev01 -configPath ./dev01.config.yaml -dump > ./update.dev01.cmd
+```
+should produce a file `update.dev01.cmd` with the statements: 
+
+``` shell
+aws ssm put-parameter --overwrite --name "parameter-name" --type "String" --value "parameter-value"
+aws ssm put-parameter --overwrite --name "secure-parameter-name" --type "SecureString" --value "secure-parameter-value"
+```
+
+
 ### Configuration file
 
 Configuration file describes the region, parameters prefix and the
