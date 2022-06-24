@@ -5,6 +5,7 @@
    [clojure.spec.alpha :as s]
    [clojure.set :as set]
    [babashka.fs :as fs]
+   [ssm.utils :as utl]
    [ssm.params :as params]
    [ssm.backup :as backup]
    [ssm.encrypt :as enc]
@@ -54,6 +55,20 @@
     (doseq [name (sort to-delete)] (println name))
     (println "Done.")))
 
+(defn- dump-params [{:keys [region prefix parameters]} env]
+  (doall (map (fn [k]
+                (let [param (k parameters)
+                      name  (str "/" (utl/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
+                      type  (:type param)
+                      value (get-in param [:values (keyword env)])
+                      cmd   (str "aws ssm put-parameter --overwrite "
+                                 "--name " "\"" name  "\" "
+                                 "--type " type " "
+                                 "--value " "\"" value "\"")]
+                  (println cmd)
+                  name))
+              (keys parameters))))
+
 (defn- decrypt-param
   "Returns paramter as is if it is not of SecureString type. If not - it
   decrypts the value for the specified environment and returns the parameter."
@@ -79,7 +94,7 @@
     (assoc config :parameters updated-params)))
 
 (defn sync-parameters
-  [config-file backup-dir env & {:keys [decrypt-region]}]
+  [config-file backup-dir env & {:keys [decrypt-region dump]}]
   (let [config-path      (-> config-file fs/absolutize fs/normalize str)
         config           (-> config-path cfg/load)
         region           (:region config)
@@ -87,18 +102,21 @@
         decrypted-config (decrypt-secure-strings config env (fn [text] (enc/decrypt text :region decrypt-region)))
         backup-path      (-> (backup/get-backup-path backup-dir region prefix env) fs/normalize str)]
 
-    (println "====================================================")
-    (println "Region:" region)
-    (println "Environment:" env)
-    (println "Config path:" config-path)
-    (println "Backup path:" backup-path)
-    (println "====================================================")
+    (if dump
+      (dump-params decrypted-config env)
+      (do
+        (println "====================================================")
+        (println "Region:" region)
+        (println "Environment:" env)
+        (println "Config path:" config-path)
+        (println "Backup path:" backup-path)
+        (println "====================================================")
 
-    (println "Starting...")
+        (println "Starting...")
 
-    (let [backed-up (backup-existing-params backup-path region prefix env)
-          updated   (update-params-from-config decrypted-config env)]
-      (delete-params region backed-up updated))))
+        (let [backed-up (backup-existing-params backup-path region prefix env)
+              updated   (update-params-from-config decrypted-config env)]
+          (delete-params region backed-up updated))))))
 
 (defn encrypt-parameter
   [text key & {:keys [region]}]

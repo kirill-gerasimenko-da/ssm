@@ -11,8 +11,9 @@
   sync-params   (let [env            (:env cmd-line-opts)
                       config-file    (:config cmd-line-opts)
                       backup-dir     (:backup-dir cmd-line-opts)
-                      decrypt-region (:decrypt-region cmd-line-opts)]
-                  (ssm/sync-parameters config-file backup-dir env :decrypt-region decrypt-region))
+                      decrypt-region (:decrypt-region cmd-line-opts)
+                      dump           (:dump cmd-line-opts)]
+                  (ssm/sync-parameters config-file backup-dir env :decrypt-region decrypt-region :dump dump))
   encrypt-param (let [text   (:text cmd-line-opts)
                       key    (:key cmd-line-opts)
                       region (:region cmd-line-opts)]

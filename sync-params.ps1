@@ -11,7 +11,10 @@ param (
     $backupDir = "./backups",
 
     [Parameter(Mandatory = $false)][String]
-    $decryptRegion
+    $decryptRegion,
+
+    [Switch][Parameter(Mandatory = $false)][Boolean]
+    $dump = $false
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
@@ -63,5 +66,6 @@ bb --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-env", $env, "-config", $configPath, "-backup-dir", $backupDir)
 if ($decryptRegion) { $params += "-decrypt-region"; $params+= $decryptRegion }
+if ($dump) { $params += "-dump"; $params+= $dump }
 
 bb --config "${scriptDir}/bb.edn" run sync-params @params
