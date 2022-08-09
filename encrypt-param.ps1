@@ -32,17 +32,17 @@ else {
 }
 
 function ensureBbExists () {
-    if (-not (Test-Path $binFolder)) {
+    if (-not (Test-Path $binPath)) {
         try {
             write-host "Babashka is not found, downloading from ${bbUrl}"
 
-            $ext = If ($IsLinux || $IsMacOS) { "tar.gz" } Else { "zip" }
+            $ext = If ($IsLinux -or $IsMacOS) { "tar.gz" } Else { "zip" }
             $outFile = "${binPath}.${ext}"
 
             ni -Path $binFolder -ItemType Directory -Force
             irm $bbUrl -OutFile $outFile
 
-            if ($isLinux) {
+            if ($IsLinux -or $IsMacOS) {
                 tar -xf $outFile -C ${binFolder}
                 chmod +x ${binPath}
             }
@@ -61,12 +61,10 @@ ensureBbExists
 
 $fullBbPath = resolve-path $binFolder
 
-$env:Path += ";${fullBbPath};"
-
-bb --config "${scriptDir}/bb.edn" prepare
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-text", $text) 
 if ($kmsKey) { $params += "-kms-key"; $params+= $kmsKey }
 if ($profileName) { $params += "-profile"; $params += $profileName }
 
-bb --config "${scriptDir}/bb.edn" run encrypt-param @params
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run encrypt-param @params
