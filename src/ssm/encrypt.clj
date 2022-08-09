@@ -17,10 +17,12 @@
   (or (System/getenv "AWS_CONFIG_FILE") (default-aws-config-path)))
 
 (defn- resolve-kms-key [& {:keys [profile kms-key]}]
-  (let [config-path (aws-config-path)]
-    (or kms-key (when (fs/exists? config-path)
-                  (get-in (aws-config/parse config-path)
-                          [(or profile "default") "ssm-param-files-key"])))))
+  (let [config-path (aws-config-path)
+        key (or kms-key (when (fs/exists? config-path)
+                          (get-in (aws-config/parse config-path)
+                                  [(or profile "default") "ssm-param-files-key"])))]
+    (when-not key (throw (Exception. "Encryption key is not found.")))
+    key))
 
 (defn- encode [to-encode]
   (.encodeToString (Base64/getEncoder) to-encode))
@@ -36,7 +38,6 @@
         kms-client (aws/client {:api :kms
                                 :credentials-provider (aws-cred/profile-credentials-provider profile)})
         response (aws/invoke kms-client request)]
-    (when-not kms-key (throw (Exception. "Encryption key is not found.")))
     (if (:cognitect.anomalies/category response)
       (throw (Exception. (str "Failed encrypting: " response)))
       (-> response
@@ -45,12 +46,14 @@
           (encode)))))
 
 (defn decrypt
-  [text & {:keys [region]}]
-  (let [bytes      (try (-> (decode text) (io/input-stream))
+  [text & {:keys [profile]}]
+  (let [profile (or profile "default")
+        bytes      (try (-> (decode text) (io/input-stream))
                         (catch Exception e
                           (throw (Exception. (str "Failed to decode the text: " e)))))
         request    {:op :Decrypt :request {:CiphertextBlob bytes}}
-        kms-client (aws/client {:api :kms :region region})
+        kms-client (aws/client {:api :kms
+                                :credentials-provider (aws-cred/profile-credentials-provider profile)})
         response (aws/invoke kms-client request)]
     (if (:cognitect.anomalies/category response)
       (throw (Exception. (str "Failed decrypting: " response)))
