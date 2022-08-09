@@ -1,6 +1,5 @@
 (ns ssm.core
   (:require
-   [pod.babashka.aws.config :as aws-config]
    [clojure.spec.test.alpha :as stest]
    [clojure.spec.alpha :as s]
    [clojure.set :as set]
