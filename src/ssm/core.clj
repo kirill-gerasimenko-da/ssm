@@ -22,8 +22,7 @@
 
   (s/fdef encrypt-parameter
     :args (s/cat :text ::non-empty-string
-                 :key ::nil-or-non-empty-string
-                 :kwargs (s/keys* :opt-un [::region])))
+                 :kwargs (s/keys* :opt-un [::profile ::kms-key])))
 
   (s/fdef decrypt-parameter
     :args (s/cat :text ::non-empty-string
@@ -119,18 +118,8 @@
           (delete-params region backed-up updated))))))
 
 (defn encrypt-parameter
-  [text key & {:keys [region]}]
-  (let [final-key (or key (let [aws-config-path (-> (fs/path (fs/home) ".aws/config")
-                                                    (fs/absolutize)
-                                                    (fs/normalize)
-                                                    (str))]
-                            (when (fs/exists? aws-config-path)
-                              (get-in (aws-config/parse aws-config-path)
-                                      ["default" "ssm-param-files-key"]))))]
-
-    (if final-key
-      (println (enc/encrypt text final-key :region region))
-      (throw (Exception. "Encryption key is not found.")))))
+  [text & {:keys [profile kms-key]}]
+  (println (enc/encrypt text :profile profile :kms-key kms-key)))
 
 (defn decrypt-parameter
   [text & {:keys [region]}]

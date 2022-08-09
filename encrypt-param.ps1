@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
@@ -5,23 +7,28 @@ param (
     $text,
 
     [Parameter(Mandatory = $false)][String]
-    $key,
+    $profileName,
 
     [Parameter(Mandatory = $false)][String]
-    $region
+    $kmsKey
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
 
-if ($isLinux) {
+if ($IsLinux) {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-linux-amd64-static.tar.gz"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-linux-amd64-static.tar.gz"
+}
+elseif ($IsMacOS) {
+    $binFolder = "${scriptDir}/bin"
+    $binPath = "${binfolder}/bb"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-macos-amd64.tar.gz"
 }
 else {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb.exe"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-windows-amd64.zip"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-windows-amd64.zip"
 }
 
 function ensureBbExists () {
@@ -29,7 +36,7 @@ function ensureBbExists () {
         try {
             write-host "Babashka is not found, downloading from ${bbUrl}"
 
-            $ext = If ($isLinux) { "tar.gz" } Else { "zip" }
+            $ext = If ($IsLinux || $IsMacOS) { "tar.gz" } Else { "zip" }
             $outFile = "${binPath}.${ext}"
 
             ni -Path $binFolder -ItemType Directory -Force
@@ -59,7 +66,7 @@ $env:Path += ";${fullBbPath};"
 bb --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-text", $text) 
-if ($key) { $params += "-key"; $params+= $key }
-if ($region) { $params += "-region"; $params += $region }
+if ($kmsKey) { $params += "-kms-key"; $params+= $kmsKey }
+if ($profileName) { $params += "-profile"; $params += $profileName }
 
 bb --config "${scriptDir}/bb.edn" run encrypt-param @params

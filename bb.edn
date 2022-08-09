@@ -15,9 +15,9 @@
                       dump           (:dump cmd-line-opts)]
                   (ssm/sync-parameters config-file backup-dir env :decrypt-region decrypt-region :dump dump))
   encrypt-param (let [text   (:text cmd-line-opts)
-                      key    (:key cmd-line-opts)
-                      region (:region cmd-line-opts)]
-                  (ssm/encrypt-parameter text key :region region))
+                      profile (:profile cmd-line-opts)
+                      kms-key (:kms-key cmd-line-opts)]
+                  (ssm/encrypt-parameter text :profile profile :kms-key kms-key))
   decrypt-param (let [text   (:text cmd-line-opts)
                       region (:region cmd-line-opts)]
                   (ssm/decrypt-parameter text :region region))}}
