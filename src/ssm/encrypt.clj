@@ -21,7 +21,6 @@
         key (or kms-key (when (fs/exists? config-path)
                           (get-in (aws-config/parse config-path)
                                   [(or profile "default") "ssm-param-files-key"])))]
-    (when-not key (throw (Exception. "Encryption key is not found.")))
     key))
 
 (defn- encode [to-encode]
@@ -34,6 +33,7 @@
   [text & {:keys [profile kms-key]}]
   (let [profile (or profile "default")
         kms-key (resolve-kms-key :profile profile :kms-key kms-key)
+        _ (when-not kms-key (throw (Exception. "Encryption key is not found.")))
         request  {:op :Encrypt :request {:KeyId kms-key :Plaintext (.getBytes text)}}
         kms-client (aws/client {:api :kms
                                 :credentials-provider (aws-cred/profile-credentials-provider profile)})
