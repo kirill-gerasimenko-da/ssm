@@ -26,7 +26,7 @@
 
   (s/fdef decrypt-parameter
     :args (s/cat :text ::non-empty-string
-                 :kwargs (s/keys* :opt-un [::region])))
+                 :kwargs (s/keys* :opt-un [::profile])))
 
   (stest/instrument `ssm.core/sync-parameters)
   (stest/instrument `ssm.core/encrypt-parameter)
@@ -122,5 +122,5 @@
   (println (enc/encrypt text :profile profile :kms-key kms-key)))
 
 (defn decrypt-parameter
-  [text & {:keys [region]}]
-  (println (enc/decrypt text :region region)))
+  [text & {:keys [profile]}]
+  (println (enc/decrypt text :profile profile)))
