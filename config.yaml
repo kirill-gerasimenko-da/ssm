@@ -1,4 +1,3 @@
-region: us-east-1
 prefix: /app/test-service
 parameters:
   Parameter1:

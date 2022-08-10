@@ -4,10 +4,10 @@
    [clojure.java.io :as io]
    [clj-yaml.core :as yaml]))
 
-(defn load [path]
+(defn load-config [path]
   (yaml/parse-string (slurp path) {:keywords true}))
 
-(defn write [path config]
+(defn write-config [path config]
   (let [dump-options {:indent 2 :flow-style :block}
         lines (str/split-lines (yaml/generate-string config :dumper-options dump-options))]
     (with-open [w (io/writer path)]

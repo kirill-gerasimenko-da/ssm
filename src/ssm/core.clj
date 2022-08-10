@@ -95,7 +95,7 @@
 (defn sync-parameters
   [config-file backup-dir env & {:keys [decrypt-region dump]}]
   (let [config-path      (-> config-file fs/absolutize fs/normalize str)
-        config           (-> config-path cfg/load)
+        config           (-> config-path cfg/load-config)
         region           (:region config)
         prefix           (:prefix config)
         decrypted-config (decrypt-secure-strings config env (fn [text] (enc/decrypt text :region decrypt-region)))

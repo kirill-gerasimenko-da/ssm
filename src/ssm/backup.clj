@@ -18,6 +18,6 @@
         params      (par/get-all-params region env-prefix)
         config      (par/params->config region prefix params)]
     (fs/create-dirs (fs/parent backup-path))
-    (cfg/write backup-path config)
+    (cfg/write-config backup-path config)
     {:backup-path backup-path
      :parameters (map :Name params)}))
