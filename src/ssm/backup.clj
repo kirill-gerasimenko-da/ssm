@@ -6,18 +6,18 @@
    [ssm.config :as cfg]))
 
 (defn get-backup-path
-  [backup-dir region prefix env]
+  [backup-dir prefix env]
   (let [file-name   (str "backup_" env "_" (utl/now-time) ".yaml")
-        path        (fs/path backup-dir region (utl/normalize-key prefix) file-name)
+        path        (fs/path backup-dir (utl/normalize-key prefix) file-name)
         config-path (str (fs/absolutize path))]
-    config-path))
+    (-> config-path fs/normalize str)))
 
 (defn ssm->file
-  [backup-path region prefix env]
-  (let [env-prefix  (str prefix "/" env)
-        params      (par/get-all-params region env-prefix)
-        config      (par/params->config region prefix params)]
+  [backup-path profile prefix env]
+  (let [env-prefix (str prefix "/" env)
+        params     (par/get-all-params profile env-prefix)
+        config     (par/params->config prefix params)]
     (fs/create-dirs (fs/parent backup-path))
     (cfg/write-config backup-path config)
     {:backup-path backup-path
-     :parameters (map :Name params)}))
+     :parameters  (map :Name params)}))

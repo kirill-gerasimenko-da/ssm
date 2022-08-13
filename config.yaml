@@ -3,11 +3,11 @@ parameters:
   Parameter1:
     type: SecureString
     values:
-      dev: dev1-val
+      dev: AQICAHg8LEsDjD6pjccJ91JKdXqk7gs8QWysvo5cAls+dQlFSwGFC/RDn40JO1fY3SDZ8gIwAAAAaTBnBgkqhkiG9w0BBwagWjBYAgEAMFMGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMIcjx8AyM8gYeC9saAgEQgCZ1G/0+eJs4f2jYHvn1980qvzCI6WbQnEOEtUQByquk9SYjsFboQg==
       qa: qa1-val
       stage: stage1-val
   Parameter2:
-    type: SecureString
+    type: String
     values:
       dev: some new values
       qa: some old value

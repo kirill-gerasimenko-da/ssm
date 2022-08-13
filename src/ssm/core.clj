@@ -18,7 +18,7 @@
     :args (s/cat :config-file ::non-empty-string
                  :env ::non-empty-string
                  :backup-dir ::non-empty-string
-                 :kwargs (s/keys* :opt-un [::decrypt-region])))
+                 :kwargs (s/keys* :opt-un [::profile ::decrypt-profile ::dump])))
 
   (s/fdef encrypt-parameter
     :args (s/cat :text ::non-empty-string
@@ -32,28 +32,28 @@
   (stest/instrument `ssm.core/encrypt-parameter)
   (stest/instrument `ssm.core/decrypt-parameter))
 
-(defn- backup-existing-params [backup-path region prefix env]
+(defn- backup-existing-params [backup-path profile prefix env]
   (println "Backing up existing SSM parameters under" prefix "for" env "environment...")
-  (let [backed-up (:parameters (backup/ssm->file backup-path region prefix env))]
+  (let [backed-up (:parameters (backup/ssm->file backup-path profile prefix env))]
     (doseq [name (sort backed-up)] (println name))
     (println "Done.")
     backed-up))
 
-(defn- update-params-from-config [config env]
+(defn- update-params-from-config [profile config env]
   (println "Updating SSM parameters from the config file...")
-  (let [updated (params/config->ssm config env)]
+  (let [updated (params/config->ssm profile config env)]
     (doseq [name (sort updated)] (println name))
     (println "Done.")
     updated))
 
-(defn- delete-params [region backed-up updated]
+(defn- delete-params [profile backed-up updated]
   (println "Deleting SSM parameters which are obsolete...")
   (let [to-delete (set/difference (set backed-up) (set updated))]
-    (params/remove-params region to-delete)
+    (params/remove-params profile to-delete)
     (doseq [name (sort to-delete)] (println name))
     (println "Done.")))
 
-(defn- dump-params [{:keys [region prefix parameters]} env]
+(defn- dump-params [{:keys [prefix parameters]} env]
   (doall (map (fn [k]
                 (let [param (k parameters)
                       name  (str "/" (utl/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
@@ -93,19 +93,20 @@
     (assoc config :parameters updated-params)))
 
 (defn sync-parameters
-  [config-file backup-dir env & {:keys [decrypt-region dump]}]
-  (let [config-path      (-> config-file fs/absolutize fs/normalize str)
+  [config-file backup-dir env & {:keys [profile decrypt-profile dump]}]
+  (let [profile          (or profile "default")
+        decrypt-profile  (or decrypt-profile profile)
+        config-path      (-> config-file fs/absolutize fs/normalize str)
         config           (-> config-path cfg/load-config)
-        region           (:region config)
         prefix           (:prefix config)
-        decrypted-config (decrypt-secure-strings config env (fn [text] (enc/decrypt text :region decrypt-region)))
-        backup-path      (-> (backup/get-backup-path backup-dir region prefix env) fs/normalize str)]
+        backup-path      (backup/get-backup-path backup-dir prefix env)
+        decrypt-fn       (fn [text] (enc/decrypt text :profile decrypt-profile))
+        decrypted-config (decrypt-secure-strings config env decrypt-fn)]
 
     (if dump
       (dump-params decrypted-config env)
       (do
         (println "====================================================")
-        (println "Region:" region)
         (println "Environment:" env)
         (println "Config path:" config-path)
         (println "Backup path:" backup-path)
@@ -113,9 +114,9 @@
 
         (println "Starting...")
 
-        (let [backed-up (backup-existing-params backup-path region prefix env)
-              updated   (update-params-from-config decrypted-config env)]
-          (delete-params region backed-up updated))))))
+        (let [backed-up (backup-existing-params backup-path profile prefix env)
+              updated   (update-params-from-config profile decrypted-config env)]
+          (delete-params profile backed-up updated))))))
 
 (defn encrypt-parameter
   [text & {:keys [profile kms-key]}]
