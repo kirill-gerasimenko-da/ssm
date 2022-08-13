@@ -3,10 +3,10 @@
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true)][String]    
+    [Parameter(Mandatory = $true,HelpMessage="Text to be decrypted")][String]    
     $text,
 
-    [Parameter(Mandatory = $false)][String]
+    [Parameter(Mandatory = $false,HelpMessage="AWS profile used to access KMS key")][String]
     $profileName
 )
 

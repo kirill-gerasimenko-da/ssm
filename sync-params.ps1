@@ -3,22 +3,23 @@
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true)][String]
+    [Parameter(Mandatory = $true,HelpMessage="Environment for the SSM parameter (included in the parameter's path)")][String]
     $env,
 
-    [Parameter(Mandatory = $true)][String]
+    [Parameter(Mandatory = $true,HelpMessage="Path to the yaml configuration file containing SSM parameters")][String]
     $configPath,
 
-    [Parameter(Mandatory = $false)][String]
+    [Parameter(Mandatory = $false,HelpMessage="Path to the backups folder")][String]
     $backupDir = "./backups",
 
-    [Parameter(Mandatory = $false, Name="profile")][String]
+    [Parameter(Mandatory = $false,HelpMessage="AWS profile name to be used as a target of sync")][String]
+    [Alias("profile")]
     $targetProfile = "default",
 
-    [Parameter(Mandatory = $false)][String]
+    [Parameter(Mandatory = $false,HelpMessage="AWS profile name to be used to decrypt parameter values from the config")][String]
     $decryptProfile = "default",
 
-    [Switch][Parameter(Mandatory = $false)][Boolean]
+    [Switch][Parameter(Mandatory = $false,HelpMessage="Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
     $dump = $false
 )
 
@@ -77,4 +78,4 @@ if ($targetProfile) { $params += "-profile"; $params+= $targetProfile }
 if ($decryptProfile) { $params += "-decrypt-profile"; $params+= $decryptProfile }
 if ($dump) { $params += "-dump"; $params+= $dump }
 
-& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run decrypt-param @params
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run sync-params @params
