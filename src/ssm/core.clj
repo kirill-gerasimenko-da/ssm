@@ -4,7 +4,7 @@
    [clojure.spec.alpha :as s]
    [clojure.set :as set]
    [babashka.fs :as fs]
-   [ssm.utils :as utl]
+   [ssm.utils :as u]
    [ssm.params :as params]
    [ssm.backup :as backup]
    [ssm.encrypt :as enc]
@@ -56,7 +56,7 @@
 (defn- dump-params [{:keys [prefix parameters]} env]
   (doall (map (fn [k]
                 (let [param (k parameters)
-                      name  (str "/" (utl/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
+                      name  (str "/" (u/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
                       type  (:type param)
                       value (get-in param [:values (keyword env)])
                       cmd   (str "aws ssm put-parameter --overwrite "
@@ -94,7 +94,7 @@
 
 (defn sync-parameters
   [config-file backup-dir env & {:keys [profile decrypt-profile dump]}]
-  (let [profile          (or profile "default")
+  (let [profile          (u/resolve-aws-profile profile)
         decrypt-profile  (or decrypt-profile profile)
         config-path      (-> config-file fs/absolutize fs/normalize str)
         config           (-> config-path cfg/load-config)
