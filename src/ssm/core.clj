@@ -58,12 +58,12 @@
                 (let [param (k parameters)
                       name  (str "/" (u/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
                       type  (:type param)
-                      value (get-in param [:values (keyword env)])
+                      value (get-in param [:values (keyword env)] :empty)
                       cmd   (str "aws ssm put-parameter --overwrite "
                                  "--name " "\"" name  "\" "
                                  "--type " type " "
                                  "--value " "\"" value "\"")]
-                  (when value
+                  (when-not (= value :empty)
                     (println cmd))
                   name))
               (keys parameters))))
@@ -74,12 +74,14 @@
   [env decrypt [par-name {:keys [type values] :as par}]]
   (if (= type "SecureString")
     (let [env-key        (keyword env)
-          decrypted      (try (decrypt (get values env-key))
+          decrypted      (try (some-> (get values env-key)
+                                      (decrypt))
                               (catch Exception e (throw (Exception. (str "Can not decrypt parameter "
                                                                          par-name " for environment '"
-                                                                         env "' because:\n" e)))))
-          updated-values (assoc values env-key decrypted)]
-      {(keyword par-name) (assoc par :values updated-values)})
+                                                                         env "' because:\n" e)))))]
+      (when decrypted
+        (let [updated-values (assoc values env-key decrypted)]
+          {(keyword par-name) (assoc par :values updated-values)})))
     {(keyword par-name) par}))
 
 (defn- decrypt-secure-strings
