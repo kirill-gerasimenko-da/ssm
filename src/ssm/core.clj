@@ -73,12 +73,12 @@
   decrypts the value for the specified environment and returns the parameter."
   [env decrypt [par-name {:keys [type values] :as par}]]
   (if (= type "SecureString")
-    (let [env-key        (keyword env)
-          decrypted      (try (some-> (get values env-key)
-                                      (decrypt))
-                              (catch Exception e (throw (Exception. (str "Can not decrypt parameter "
-                                                                         par-name " for environment '"
-                                                                         env "' because:\n" e)))))]
+    (let [env-key   (keyword env)
+          decrypted (try (some-> (get values env-key)
+                                 (decrypt))
+                         (catch Exception e (throw (Exception. (str "Can not decrypt parameter "
+                                                                    par-name " for environment '"
+                                                                    env "' because:\n" e)))))]
       (when decrypted
         (let [updated-values (assoc values env-key decrypted)]
           {(keyword par-name) (assoc par :values updated-values)})))
