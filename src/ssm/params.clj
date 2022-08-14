@@ -58,14 +58,17 @@
 
 (defn config->ssm
   [profile {:keys [prefix parameters]} env]
-  (doall (map (fn [k]
-                (let [param (k parameters)
-                      name  (str "/" (utl/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
-                      type  (:type param)
-                      value (get-in param [:values (keyword env)])]
+  (->> (keys parameters)
+       (map (fn [k]
+              (let [param (k parameters)
+                    name  (str "/" (utl/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
+                    type  (:type param)
+                    value (get-in param [:values (keyword env)])]
+                (when value
                   (put-param profile type name value)
-                  name))
-              (keys parameters))))
+                  name))))
+       (filter #(not (nil? %)))
+       (doall)))
 
 (defn remove-params [profile params]
   (let [batches (partition 10 10 nil params)]

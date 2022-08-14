@@ -58,12 +58,12 @@
                 (let [param (k parameters)
                       name  (str "/" (u/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
                       type  (:type param)
-                      value (get-in param [:values (keyword env)] :empty)
+                      value (get-in param [:values (keyword env)])
                       cmd   (str "aws ssm put-parameter --overwrite "
                                  "--name " "\"" name  "\" "
                                  "--type " type " "
                                  "--value " "\"" value "\"")]
-                  (when-not (= value :empty)
+                  (when value
                     (println cmd))
                   name))
               (keys parameters))))
