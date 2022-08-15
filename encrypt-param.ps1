@@ -3,13 +3,14 @@
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true,HelpMessage="Text to be encrypted")][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Text to be encrypted")][String]
     $text,
 
-    [Parameter(Mandatory = $false,HelpMessage="AWS profile used to access KMS key")][String]
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile used to access KMS key")][String]
+    [Alias("profile")]
     $profileName,
 
-    [Parameter(Mandatory = $false,HelpMessage="AWS KMS key/alias to be used for encryption")][String]
+    [Parameter(Mandatory = $false, HelpMessage = "AWS KMS key/alias to be used for encryption")][String]
     $kmsKey
 )
 
@@ -64,7 +65,7 @@ $fullBbPath = resolve-path $binFolder
 & "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-text", $text) 
-if ($kmsKey) { $params += "-kms-key"; $params+= $kmsKey }
+if ($kmsKey) { $params += "-kms-key"; $params += $kmsKey }
 if ($profileName) { $params += "-profile"; $params += $profileName }
 
 & "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run encrypt-param @params

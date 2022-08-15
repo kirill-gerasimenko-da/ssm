@@ -3,23 +3,23 @@
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true,HelpMessage="Environment for the SSM parameter (included in the parameter's path)")][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Environment for the SSM parameter (included in the parameter's path)")][String]
     $env,
 
-    [Parameter(Mandatory = $true,HelpMessage="Path to the yaml configuration file containing SSM parameters")][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Path to the yaml configuration file containing SSM parameters")][String]
     $configPath,
 
-    [Parameter(Mandatory = $false,HelpMessage="Path to the backups folder")][String]
+    [Parameter(Mandatory = $false, HelpMessage = "Path to the backups folder")][String]
     $backupDir = "./backups",
 
-    [Parameter(Mandatory = $false,HelpMessage="AWS profile name to be used as a target of sync")][String]
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used as a target of sync")][String]
     [Alias("profile")]
     $targetProfile = "default",
 
-    [Parameter(Mandatory = $false,HelpMessage="AWS profile name to be used to decrypt parameter values from the config")][String]
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used to decrypt parameter values from the config")][String]
     $decryptProfile = "default",
 
-    [Switch][Parameter(Mandatory = $false,HelpMessage="Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
+    [Switch][Parameter(Mandatory = $false, HelpMessage = "Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
     $dump = $false
 )
 
@@ -74,8 +74,8 @@ $fullBbPath = resolve-path $binFolder
 & "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-env", $env, "-config", $configPath, "-backup-dir", $backupDir)
-if ($targetProfile) { $params += "-profile"; $params+= $targetProfile }
-if ($decryptProfile) { $params += "-decrypt-profile"; $params+= $decryptProfile }
-if ($dump) { $params += "-dump"; $params+= $dump }
+if ($targetProfile) { $params += "-profile"; $params += $targetProfile }
+if ($decryptProfile) { $params += "-decrypt-profile"; $params += $decryptProfile }
+if ($dump) { $params += "-dump"; $params += $dump }
 
 & "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run sync-params @params

@@ -21,6 +21,21 @@ environment will be stored under `backups` folder.
 ./sync-params.ps1 -env dev01 -configPath ./dev01.config.yaml
 ```
 
+_Note_: There are additional `AWS` profile parameters `-profile` and
+`-decryptProfile` (both defaulted to `default`).
+
+### Profile
+
+`-profile` parameter defines `AWS` profile to be used for connecting
+to `AWS` and applying `SSM` parameters to. It's a way to configure the
+target of `sync-params.ps1`.
+
+### Decrypt profile
+
+`-decryptProfile` parameter defines `AWS` profile to be used to
+decrypt the `SecureString` values from the config file.
+
+
 ### Dumping put-parameter AWS CLI commands
 
 There is a convenience CLI key `-dump`, which will print to stdout the
@@ -40,27 +55,24 @@ aws ssm put-parameter --overwrite --name "parameter-name" --type "String" --valu
 aws ssm put-parameter --overwrite --name "secure-parameter-name" --type "SecureString" --value "secure-parameter-value"
 ```
 
-
 ### Configuration file
 
-Configuration file describes the region, parameters prefix and the
-parameters themselves. Each parameter has values for all the
-environments supported along with the type of the parameter.
+Configuration file describes the parameters prefix and the parameters
+themselves. Each parameter has values for all the environments
+supported along with the type of the parameter.
 
 `SecureString` parameters are stored in the configuration file in
 encrypted form, so it's fine to have configuration files added to VCS
 like Git.
 
 Decryption of such parameter value happens when the parameters are
-synced and will use default `AWS` profile region to look up for `KMS`
-key which was used to encrypt the value. If neccessary the region
-could be overriden via command line argument.
+synced and will use profile supplied in `-decryptProfile` parameter to
+access the KMS decryption key for the encrypted value.
 
 For example, the following configuration file, when ran for `stage`
 environment
 
 ``` yaml
-region: us-east-1
 prefix: /app/test-service
 parameters:
   Parameter/With/SubValues1:
@@ -80,7 +92,7 @@ parameters:
       
 ```
 
-is going to produce the following updates for region `us-east-1`:
+is going to produce the following updates:
 
 ```
 /app/test-service/stage/Parameter/With/SubValues1 = <DECRYPTED_VALUE>
@@ -107,11 +119,13 @@ neccessary to encrypt it.
 The are two helper scripts `encrypt-param.ps1` and `decrypt-param.ps1`
 just for that.
 
-Encryption requires to provide a text to be encrypted and a `KMS` key
-id. To simplify things, if the key is not provided as a command like
-parameter it will look for it in the `~/.aws/config` file under
-`ssm-param-files-key` key:
+Encryption requires to provide a text to be encrypted, an `AWS`
+profile name and `KMS` key. If none provided - `default` value will be
+used for profile and the key value will be searched in `~/.aws/config`
+file under `ssm-param-files-key` key. Providing the profile/key as an
+argument to the script will override the alogrithm.
 
+Below is the example of the profile with `KMS` key set up:
 ``` ini
 [default]
 region = us-east-1
@@ -120,8 +134,31 @@ ssm-param-files-key = alias/key-id-to-encrypt-the-values
 ```
 
 Decryption requires no key to be used (information about it is embedded into the
-encrypted payload).
+encrypted payload), but the profile could be still overriden via the parameter.
 
-_Note_: Synchronization and decryption scripts require only proper
-region to be specified (if not specified - will use the region from
-local `AWS` configuration, and could be overriden with CLI parameter).
+## Examples
+
+The below command will use the profile `default` to connect to `AWS`
+and will use `KMS` key defined in the `default` profile config file
+under `ssm-param-files-key` key (if the key is not found in profile
+config - the error will throw).
+
+``` powershell
+./encrypt-param.ps1 -text "hello world"
+```
+
+The below command will use the provided profile value `user2` to
+connect to `AWS` and will use `KMS` key defined in the `user2` profile
+config file under `ssm-param-files-key` key (if the key is not found
+in profile config - the error will throw).
+
+``` powershell
+./encrypt-param.ps1 -text "hello world" -profile "user2"
+```
+
+To override the `KMS` key in the command above use `-kmsKey` paramter:
+
+``` powershell
+./encrypt-param.ps1 -text "hello world" -profile "user2" -kmsKey "alias/some-key-id"
+```
+
