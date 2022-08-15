@@ -8,16 +8,17 @@
                  [babashka.cli :as cli])
   :init         {(def cmd-line-opts (cli/parse-opts *command-line-args*))
                  (ssm/instrument-all)}
-  sync-params   (let [env            (:env cmd-line-opts)
-                      config-file    (:config cmd-line-opts)
-                      backup-dir     (:backup-dir cmd-line-opts)
-                      decrypt-region (:decrypt-region cmd-line-opts)
-                      dump           (:dump cmd-line-opts)]
-                  (ssm/sync-parameters config-file backup-dir env :decrypt-region decrypt-region :dump dump))
-  encrypt-param (let [text   (:text cmd-line-opts)
-                      key    (:key cmd-line-opts)
-                      region (:region cmd-line-opts)]
-                  (ssm/encrypt-parameter text key :region region))
-  decrypt-param (let [text   (:text cmd-line-opts)
-                      region (:region cmd-line-opts)]
-                  (ssm/decrypt-parameter text :region region))}}
+  sync-params   (let [env             (:env cmd-line-opts)
+                      config-file     (:config cmd-line-opts)
+                      backup-dir      (:backup-dir cmd-line-opts)
+                      profile         (:profile cmd-line-opts)
+                      decrypt-profile (:decrypt-profile cmd-line-opts)
+                      dump            (:dump cmd-line-opts)]
+                  (ssm/sync-parameters config-file backup-dir env :profile profile :decrypt-profile decrypt-profile :dump dump))
+  encrypt-param (let [text    (:text cmd-line-opts)
+                      profile (:profile cmd-line-opts)
+                      kms-key (:kms-key cmd-line-opts)]
+                  (ssm/encrypt-parameter text :profile profile :kms-key kms-key))
+  decrypt-param (let [text    (:text cmd-line-opts)
+                      profile (:profile cmd-line-opts)]
+                  (ssm/decrypt-parameter text :profile profile))}}

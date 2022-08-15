@@ -1,47 +1,58 @@
+#!/usr/bin/env pwsh
+
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true)][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Environment for the SSM parameter (included in the parameter's path)")][String]
     $env,
 
-    [Parameter(Mandatory = $true)][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Path to the yaml configuration file containing SSM parameters")][String]
     $configPath,
 
-    [Parameter(Mandatory = $false)][String]
+    [Parameter(Mandatory = $false, HelpMessage = "Path to the backups folder")][String]
     $backupDir = "./backups",
 
-    [Parameter(Mandatory = $false)][String]
-    $decryptRegion,
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used as a target of sync")][String]
+    [Alias("profile")]
+    $targetProfile = "default",
 
-    [Switch][Parameter(Mandatory = $false)][Boolean]
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used to decrypt parameter values from the config")][String]
+    $decryptProfile = "default",
+
+    [Switch][Parameter(Mandatory = $false, HelpMessage = "Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
     $dump = $false
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
 
-if ($isLinux) {
+if ($IsLinux) {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-linux-amd64-static.tar.gz"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-linux-amd64-static.tar.gz"
+}
+elseif ($IsMacOS) {
+    $binFolder = "${scriptDir}/bin"
+    $binPath = "${binfolder}/bb"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-macos-amd64.tar.gz"
 }
 else {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb.exe"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-windows-amd64.zip"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-windows-amd64.zip"
 }
 
 function ensureBbExists () {
-    if (-not (Test-Path $binFolder)) {
+    if (-not (Test-Path $binPath)) {
         try {
             write-host "Babashka is not found, downloading from ${bbUrl}"
 
-            $ext = If ($isLinux) { "tar.gz" } Else { "zip" }
+            $ext = If ($IsLinux -or $IsMacOS) { "tar.gz" } Else { "zip" }
             $outFile = "${binPath}.${ext}"
 
             ni -Path $binFolder -ItemType Directory -Force
             irm $bbUrl -OutFile $outFile
 
-            if ($isLinux) {
+            if ($IsLinux -or $IsMacOS) {
                 tar -xf $outFile -C ${binFolder}
                 chmod +x ${binPath}
             }
@@ -60,12 +71,11 @@ ensureBbExists
 
 $fullBbPath = resolve-path $binFolder
 
-$env:Path += ";${fullBbPath};"
-
-bb --config "${scriptDir}/bb.edn" prepare
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-env", $env, "-config", $configPath, "-backup-dir", $backupDir)
-if ($decryptRegion) { $params += "-decrypt-region"; $params+= $decryptRegion }
-if ($dump) { $params += "-dump"; $params+= $dump }
+if ($targetProfile) { $params += "-profile"; $params += $targetProfile }
+if ($decryptProfile) { $params += "-decrypt-profile"; $params += $decryptProfile }
+if ($dump) { $params += "-dump"; $params += $dump }
 
-bb --config "${scriptDir}/bb.edn" run sync-params @params
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run sync-params @params

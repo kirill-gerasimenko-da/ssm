@@ -1,41 +1,49 @@
+#!/usr/bin/env pwsh
+
 [CmdletBinding(PositionalBinding = $false)]
 
 param (
-    [Parameter(Mandatory = $true)][String]
+    [Parameter(Mandatory = $true, HelpMessage = "Text to be encrypted")][String]
     $text,
 
-    [Parameter(Mandatory = $false)][String]
-    $key,
+    [Parameter(Mandatory = $false, HelpMessage = "AWS profile used to access KMS key")][String]
+    [Alias("profile")]
+    $profileName,
 
-    [Parameter(Mandatory = $false)][String]
-    $region
+    [Parameter(Mandatory = $false, HelpMessage = "AWS KMS key/alias to be used for encryption")][String]
+    $kmsKey
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
 
-if ($isLinux) {
+if ($IsLinux) {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-linux-amd64-static.tar.gz"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-linux-amd64-static.tar.gz"
+}
+elseif ($IsMacOS) {
+    $binFolder = "${scriptDir}/bin"
+    $binPath = "${binfolder}/bb"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-macos-amd64.tar.gz"
 }
 else {
     $binFolder = "${scriptDir}/bin"
     $binPath = "${binfolder}/bb.exe"
-    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.8.2/babashka-0.8.2-windows-amd64.zip"
+    $bbUrl = "https://github.com/babashka/babashka/releases/download/v0.9.161/babashka-0.9.161-windows-amd64.zip"
 }
 
 function ensureBbExists () {
-    if (-not (Test-Path $binFolder)) {
+    if (-not (Test-Path $binPath)) {
         try {
             write-host "Babashka is not found, downloading from ${bbUrl}"
 
-            $ext = If ($isLinux) { "tar.gz" } Else { "zip" }
+            $ext = If ($IsLinux -or $IsMacOS) { "tar.gz" } Else { "zip" }
             $outFile = "${binPath}.${ext}"
 
             ni -Path $binFolder -ItemType Directory -Force
             irm $bbUrl -OutFile $outFile
 
-            if ($isLinux) {
+            if ($IsLinux -or $IsMacOS) {
                 tar -xf $outFile -C ${binFolder}
                 chmod +x ${binPath}
             }
@@ -54,12 +62,10 @@ ensureBbExists
 
 $fullBbPath = resolve-path $binFolder
 
-$env:Path += ";${fullBbPath};"
-
-bb --config "${scriptDir}/bb.edn" prepare
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-text", $text) 
-if ($key) { $params += "-key"; $params+= $key }
-if ($region) { $params += "-region"; $params += $region }
+if ($kmsKey) { $params += "-kms-key"; $params += $kmsKey }
+if ($profileName) { $params += "-profile"; $params += $profileName }
 
-bb --config "${scriptDir}/bb.edn" run encrypt-param @params
+& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run encrypt-param @params
