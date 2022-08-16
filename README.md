@@ -162,3 +162,21 @@ To override the `KMS` key in the command above use `-kmsKey` paramter:
 ./encrypt-param.ps1 -text "hello world" -profile "user2" -kmsKey "alias/some-key-id"
 ```
 
+The `decrypt-param.ps1` supports only `-profile` key, since the `KSM`
+key is already part of the encrypted payload.
+
+The below command synchronizes `SSM` parameters from the supplied
+`config.yaml` configuration file. It will use credentials and region
+information from `user1` profile to connect to `AWS` and will use
+`user2` profile to decrypt `SecureString` values if any:
+
+``` powershell
+./sync-params.ps1 -env test -configPath ./config.yaml -profile "user1" -decryptProfile "user2"
+```
+
+If there is no need in different profiles and encryption/decryption of
+parameter is using `default` profile then the command could be simpler: 
+
+``` powershell
+./sync-params.ps1 -env test -configPath ./config.yaml
+```
