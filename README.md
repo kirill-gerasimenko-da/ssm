@@ -116,7 +116,7 @@ _Note_: Backed values for `SecureString` are stored in plaintext.
 Before putting sensitive data into `SecureString` parameter it is
 neccessary to encrypt it. 
 
-The are two helper scripts `encrypt-param.ps1` and `decrypt-param.ps1`
+The are two helper scripts `encrypt-text.ps1` and `decrypt-text.ps1`
 just for that.
 
 Encryption requires to provide a text to be encrypted, an `AWS`
@@ -144,7 +144,7 @@ under `ssm-param-files-key` key (if the key is not found in profile
 config - the error will throw).
 
 ``` powershell
-./encrypt-param.ps1 -text "hello world"
+./encrypt-text.ps1 -text "hello world"
 ```
 
 The below command will use the provided profile value `user2` to
@@ -153,16 +153,16 @@ config file under `ssm-param-files-key` key (if the key is not found
 in profile config - the error will throw).
 
 ``` powershell
-./encrypt-param.ps1 -text "hello world" -profile "user2"
+./encrypt-text.ps1 -text "hello world" -profile "user2"
 ```
 
 To override the `KMS` key in the command above use `-kmsKey` paramter:
 
 ``` powershell
-./encrypt-param.ps1 -text "hello world" -profile "user2" -kmsKey "alias/some-key-id"
+./encrypt-text.ps1 -text "hello world" -profile "user2" -kmsKey "alias/some-key-id"
 ```
 
-The `decrypt-param.ps1` supports only `-profile` key, since the `KSM`
+The `decrypt-text.ps1` supports only `-profile` key, since the `KSM`
 key is already part of the encrypted payload.
 
 The below command synchronizes `SSM` parameters from the supplied
