@@ -14,10 +14,10 @@ param (
 
     [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used as a target of sync")][String]
     [Alias("profile")]
-    $targetProfile = "default",
+    $targetProfile,
 
     [Parameter(Mandatory = $false, HelpMessage = "AWS profile name to be used to decrypt parameter values from the config")][String]
-    $decryptProfile = "default",
+    $decryptProfile,
 
     [Switch][Parameter(Mandatory = $false, HelpMessage = "Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
     $dump = $false

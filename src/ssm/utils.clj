@@ -32,4 +32,7 @@
   (or (System/getenv "AWS_CONFIG_FILE") (default-aws-config-path)))
 
 (defn resolve-aws-profile [profile]
-  (or profile (System/getenv "AWS_PROFILE") "default"))
+  (let [resolved (if (or (nil? profile) (= "" profile))
+                 (or (System/getenv "AWS_PROFILE") "default")
+                 profile)]
+    resolved))
