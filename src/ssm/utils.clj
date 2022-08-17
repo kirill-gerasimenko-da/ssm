@@ -23,8 +23,8 @@
   (.format (java.text.SimpleDateFormat. "MM.dd.yyyy-HH_mm_ss") (new java.util.Date)))
 
 (defn default-aws-config-path []
-  (-> (fs/path (fs/home) ".aws/config")
-      (fs/absolutize)
+  (-> (fs/path "~/.aws/config")
+      (fs/expand-home)
       (fs/normalize)
       (str)))
 

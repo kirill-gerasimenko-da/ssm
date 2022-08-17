@@ -71,11 +71,13 @@ ensureBbExists
 
 $fullBbPath = resolve-path $binFolder
 
-& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
+$env:Path = ";${fullBbPath};" + $env:Path
+
+bb --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-env", $env, "-config", $configPath, "-backup-dir", $backupDir)
 if ($targetProfile) { $params += "-profile"; $params += $targetProfile }
 if ($decryptProfile) { $params += "-decrypt-profile"; $params += $decryptProfile }
 if ($dump) { $params += "-dump"; $params += $dump }
 
-& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run sync-params @params
+bb --config "${scriptDir}/bb.edn" run sync-params @params

@@ -62,10 +62,12 @@ ensureBbExists
 
 $fullBbPath = resolve-path $binFolder
 
-& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" prepare
+$env:Path = ";${fullBbPath};" + $env:Path
+
+bb --config "${scriptDir}/bb.edn" prepare
 
 $params = @("-text", $text) 
 if ($kmsKey) { $params += "-kms-key"; $params += $kmsKey }
 if ($profileName) { $params += "-profile"; $params += $profileName }
 
-& "${fullBbPath}/bb" --config "${scriptDir}/bb.edn" run encrypt-param @params
+bb --config "${scriptDir}/bb.edn" run encrypt-param @params
