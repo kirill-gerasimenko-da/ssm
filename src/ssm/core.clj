@@ -53,7 +53,7 @@
     (doseq [name (sort to-delete)] (println name))
     (println "Done.")))
 
-(defn- dump-params [{:keys [prefix parameters]} env]
+(defn- dump-params [{:keys [prefix parameters]} env profile]
   (doall (map (fn [k]
                 (let [param (k parameters)
                       name  (str "/" (u/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
@@ -62,7 +62,8 @@
                       cmd   (str "aws ssm put-parameter --overwrite "
                                  "--name " "\"" name  "\" "
                                  "--type " type " "
-                                 "--value " "\"" value "\"")]
+                                 "--value " "\"" value "\" "
+                                 "--profile " "\"" profile "\"")]
                   (when value
                     (println cmd))
                   name))
@@ -106,7 +107,7 @@
         decrypted-config (decrypt-secure-strings config env decrypt-fn)]
 
     (if dump
-      (dump-params decrypted-config env)
+      (dump-params decrypted-config env profile)
       (do
         (println "====================================================")
         (println "Environment:" env)
