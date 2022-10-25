@@ -32,16 +32,16 @@
   (stest/instrument `ssm.core/encrypt-parameter)
   (stest/instrument `ssm.core/decrypt-parameter))
 
-(defn- backup-existing-params [backup-path profile prefix env]
+(defn- backup-existing-params [backup-path profile prefix env filter-out-secure?]
   (println "Backing up existing SSM parameters under" prefix "for" env "environment...")
-  (let [backed-up (:parameters (backup/ssm->file backup-path profile prefix env))]
+  (let [backed-up (:parameters (backup/ssm->file backup-path profile prefix env filter-out-secure?))]
     (doseq [name (sort backed-up)] (println name))
     (println "Done.")
     backed-up))
 
-(defn- update-params-from-config [profile config env]
+(defn- update-params-from-config [profile config env filter-out-secure?]
   (println "Updating SSM parameters from the config file...")
-  (let [updated (params/config->ssm profile config env)]
+  (let [updated (params/config->ssm profile config env filter-out-secure?)]
     (doseq [name (sort updated)] (println name))
     (println "Done.")
     updated))
@@ -53,7 +53,7 @@
     (doseq [name (sort to-delete)] (println name))
     (println "Done.")))
 
-(defn- dump-params [{:keys [prefix parameters]} env profile]
+(defn- dump-params [{:keys [prefix parameters]} env profile filter-out-secure?]
   (doall (map (fn [k]
                 (let [param (k parameters)
                       name  (str "/" (u/normalize-key (str prefix "/" env "/" (subs (str k) 1))))
@@ -64,7 +64,8 @@
                                  "--type " type " "
                                  "--value " "\"" value "\" "
                                  "--profile " "\"" profile "\"")]
-                  (when value
+                  (when (and value (or (not filter-out-secure?)
+                                     (not (= type "SecureString"))))
                     (println cmd))
                   name))
               (keys parameters))))
@@ -96,29 +97,30 @@
     (assoc config :parameters updated-params)))
 
 (defn sync-parameters
-  [config-file backup-dir env & {:keys [profile decrypt-profile dump]}]
-  (let [profile          (u/resolve-aws-profile profile)
-        decrypt-profile  (or decrypt-profile profile)
-        config-path      (-> config-file fs/absolutize fs/normalize str)
-        config           (-> config-path cfg/load-config)
-        prefix           (:prefix config)
-        backup-path      (backup/get-backup-path backup-dir prefix env)
-        decrypt-fn       (fn [text] (enc/decrypt text :profile decrypt-profile))
-        decrypted-config (decrypt-secure-strings config env decrypt-fn)]
+  [config-file backup-dir env & {:keys [profile decrypt-profile dump filter-out-secure?]}]
+  (let [profile            (u/resolve-aws-profile profile)
+        decrypt-profile    (or decrypt-profile profile)
+        config-path        (-> config-file fs/absolutize fs/normalize str)
+        config             (-> config-path cfg/load-config)
+        prefix             (:prefix config)
+        backup-path        (backup/get-backup-path backup-dir prefix env)
+        decrypt-fn         (fn [text] (enc/decrypt text :profile decrypt-profile))
+        decrypted-config   (decrypt-secure-strings config env decrypt-fn)]
 
     (if dump
-      (dump-params decrypted-config env profile)
+      (dump-params decrypted-config env profile filter-out-secure?)
       (do
         (println "====================================================")
         (println "Environment:" env)
         (println "Config path:" config-path)
         (println "Backup path:" backup-path)
+        (println "Secure values filtering:" filter-out-secure?)
         (println "====================================================")
 
         (println "Starting...")
 
-        (let [backed-up (backup-existing-params backup-path profile prefix env)
-              updated   (update-params-from-config profile decrypted-config env)]
+        (let [backed-up (backup-existing-params backup-path profile prefix env filter-out-secure?)
+              updated   (update-params-from-config profile decrypted-config env filter-out-secure?)]
           (delete-params profile backed-up updated))))))
 
 (defn encrypt-parameter

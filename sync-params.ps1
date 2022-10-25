@@ -20,7 +20,10 @@ param (
     $decryptProfile,
 
     [Switch][Parameter(Mandatory = $false, HelpMessage = "Instead of syncing the parameters - print to std out aws cli version of put-parameter commands")][Boolean]
-    $dump = $false
+    $dump = $false,
+
+    [Switch][Parameter(Mandatory = $false, HelpMessage = "Ignore SecureString parameters during sync - don't update, delete or backup them")][Boolean]
+    $filterOutSecure = $false
 )
 
 $scriptDir = Split-Path $script:MyInvocation.MyCommand.Path
@@ -79,5 +82,6 @@ $params = @("-env", $env, "-config", $configPath, "-backup-dir", $backupDir)
 if ($targetProfile) { $params += "-profile"; $params += $targetProfile }
 if ($decryptProfile) { $params += "-decrypt-profile"; $params += $decryptProfile }
 if ($dump) { $params += "-dump"; $params += $dump }
+if ($filterOutSecure) { $params += "-filter-out-secure"; $params += $filterOutSecure }
 
 bb --config "${scriptDir}/bb.edn" run sync-params @params

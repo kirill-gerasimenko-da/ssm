@@ -13,9 +13,9 @@
     (-> config-path fs/normalize str)))
 
 (defn ssm->file
-  [backup-path profile prefix env]
+  [backup-path profile prefix env filter-out-secure?]
   (let [env-prefix (str prefix "/" env)
-        params     (par/get-all-params profile env-prefix)
+        params     (par/get-all-params profile env-prefix filter-out-secure?)
         config     (par/params->config prefix params)]
     (fs/create-dirs (fs/parent backup-path))
     (cfg/write-config backup-path config)
